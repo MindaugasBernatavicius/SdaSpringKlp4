@@ -3,13 +3,19 @@ package cf.mindaugas.sdaspringklp4.controller;
 import cf.mindaugas.sdaspringklp4.model.BlogPost;
 import cf.mindaugas.sdaspringklp4.repository.BlogPostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
+@CrossOrigin(origins = "*", maxAge = 3600, allowedHeaders = "*")
 public class BlogPostController {
     // imitating a database
     //Map<String, List<String>> posts = new HashMap<>(){{
@@ -30,9 +36,10 @@ public class BlogPostController {
     // get single post :: http://localhost:8081/api/posts/1
     @RequestMapping(method = RequestMethod.GET, path="/posts/{id}")
     public BlogPost getPost(@PathVariable Integer id) {
-        System.err.println("getPost /posts/{" + id + "} hit");
-        //System.err.println(posts.get(id.toString()));
-        return bpr.findById(id).get();
+        //System.err.println("getPost /posts/{" + id + "} hit");
+        //System.err.println(posts.get(id.toString())); // no error handling
+        return bpr.findById(id).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND)); // 404
     }
 
     //// get single post :: http://localhost:8081/api/posts_query?id=4
@@ -47,12 +54,21 @@ public class BlogPostController {
     @RequestMapping(
             method = RequestMethod.POST,
             path="/posts",
-            consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE
+            //consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE // author=svsv&text=sgdgd
+            consumes = MediaType.APPLICATION_JSON_VALUE // { "author": "svsv" , "text" : "sgdgd" }
     )
+    // Because we changed the media type, we now need to get the
+    // ... data from @RequestBody (... or use Jackson library
+    // ... with @JsonField("first") to deserialize the incoming request)
     public ResponseEntity<String> addPost(
-                       @RequestParam("author") String author,
-                       @RequestParam("post") String post) {
-        bpr.save(new BlogPost(author, post));
+                        //@RequestParam("author") String author,    // ... if APPLICATION_FORM_URLENCODED_VALUE
+                        //@RequestParam("post") String post)        // ... if APPLICATION_FORM_URLENCODED_VALUE
+                        //@RequestBody BlogPost post)               // ... if APPLICATION_JSON_VALUE
+                        @RequestBody Map<String, String> params)
+    {
+        //bpr.save(new BlogPost(author, post));                     // ... if APPLICATION_FORM_URLENCODED_VALUE
+        //bpr.save(post);                                           // ... if APPLICATION_JSON_VALUE
+        bpr.save(new BlogPost(params.get("author"), params.get("post"))); // ... if APPLICATION_JSON_VALUE + param map
         return new ResponseEntity<>(HttpStatus.CREATED); // 201
     }
 
@@ -62,7 +78,18 @@ public class BlogPostController {
     //    posts.remove(id);
     //    return posts;
     //}
-    //
+
+    //@RequestMapping(method = RequestMethod.DELETE, path="/posts/{id}")
+    @DeleteMapping(path="/posts/{id}")
+    public ResponseEntity<Void> deletePost(@PathVariable Integer id) {
+        try {
+            bpr.deleteById(id);
+        } catch (EmptyResultDataAccessException e){
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // 404
+        }
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT); // 204
+    }
+
     //// update post
     //// Note the usage of @PathVariable instead of @RequestParam.
     //// ... In reality you would use either one or the other, this is just for illustration that they can both be used
@@ -77,4 +104,21 @@ public class BlogPostController {
     //    posts.put(id, Arrays.asList(author, post));
     //    return posts;
     //}
+
+    @RequestMapping(
+            method = RequestMethod.PUT,
+            path="/posts/{id}",
+            consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE
+    )
+    public ResponseEntity<Void> updatePost(
+            @PathVariable Integer id,
+            @RequestParam("author") String author,
+            @RequestParam("post") String post) {
+        BlogPost blogPost = bpr.findById(id).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND)); // 404
+        blogPost.setAuthor(author);
+        blogPost.setPost(post);
+        bpr.save(blogPost);
+        return new ResponseEntity<>(HttpStatus.OK); // 200
+    }
 }

@@ -60,6 +60,7 @@ public class BlogPostController {
     // Because we changed the media type, we now need to get the
     // ... data from @RequestBody (... or use Jackson library
     // ... with @JsonField("first") to deserialize the incoming request)
+    // ... see more: https://stackoverflow.com/questions/7312436/spring-mvc-how-to-get-all-request-params-in-a-map-in-spring-controller
     public ResponseEntity<String> addPost(
                         //@RequestParam("author") String author,    // ... if APPLICATION_FORM_URLENCODED_VALUE
                         //@RequestParam("post") String post)        // ... if APPLICATION_FORM_URLENCODED_VALUE

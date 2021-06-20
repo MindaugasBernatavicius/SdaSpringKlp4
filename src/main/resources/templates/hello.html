@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://thymeleaf.org">
+    <head>
+        <meta charset="UTF-8">
+        <title>Hello to the awesome blog!</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body>
+        <div th:replace="~{fragments/header :: header}">Header</div>
+<!--        <p>Hello <span th:text="${name_in_view} ?: 'stranger' "></span>!</p>-->
+        <p>
+            <span th:text="${name_in_view == ''} ? '' : 'Hello'"></span>
+            <span th:text="${name_in_view == ''} ? ('Empty string not allowed') : (${name_in_view} ?: 'stranger')"></span>!</p>
+<!--        <p>Hello <span>Mindaugas zzz</span>!</p>&ndash;&gt;-->
+<!--        <div th:switch="${name_in_view}">-->
+<!--            <p th:case="''">Empty string is not allowed</p>-->
+<!--            <p th:case="*">Hello Stranger</p>-->
+<!--            <p th:text="${name_in_view}"></p>-->
+<!--        </div>-->
+    </body>
+</html>

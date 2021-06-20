@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://thymeleaf.org">
+  <head>
+      <meta charset="UTF-8">
+      <title>Title</title>
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+<body >
+  <div th:replace="~{fragments/header :: header}">Header</div>
+  <div class="container">
+    <div class="alert alert-danger" role="alert" th:if="${posts.empty}">
+      There are no posts!
+    </div>
+    <table class="table" th:if="${!posts.empty}">
+      <thead>
+      <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Author</th>
+        <th scope="col">Text</th>
+      </tr>
+      </thead>
+      <tr th:each="post: ${posts}">
+        <td th:text="${post.id}"></td>
+        <td th:text="${post.author}"></td>
+        <td th:text="${post.post}"></td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>

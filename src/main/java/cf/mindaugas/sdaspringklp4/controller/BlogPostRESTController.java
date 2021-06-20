@@ -10,13 +10,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
 @CrossOrigin(origins = "*", maxAge = 3600, allowedHeaders = "*")
-public class BlogPostController {
+public class BlogPostRESTController {
+
     // imitating a database
     //Map<String, List<String>> posts = new HashMap<>(){{
     //    put("1", Arrays.asList("Mindaugas", "Hello world blog post!"));
@@ -27,14 +29,18 @@ public class BlogPostController {
     @Autowired
     private BlogPostRepository bpr;
 
+    // get all posts or some by author name :: http://localhost:8081/api/posts?author_name=Jonas
     //@RequestMapping(method = RequestMethod.GET, path = "/posts")
     @GetMapping(path = "/posts")
-    public Iterable<BlogPost> getAllPosts(){
-        return bpr.findAll();
+    public Iterable<BlogPost> getAllPosts(@RequestParam(value = "author_name", required = false) String authorName) {
+        return authorName == null
+                ? bpr.findAll()
+                : bpr.findBlogPostsByAuthorContainsOrderByPost(authorName).orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     // get single post :: http://localhost:8081/api/posts/1
-    @RequestMapping(method = RequestMethod.GET, path="/posts/{id}")
+    @RequestMapping(method = RequestMethod.GET, path = "/posts/{id}")
     public BlogPost getPost(@PathVariable Integer id) {
         //System.err.println("getPost /posts/{" + id + "} hit");
         //System.err.println(posts.get(id.toString())); // no error handling
@@ -53,7 +59,7 @@ public class BlogPostController {
     // add post
     @RequestMapping(
             method = RequestMethod.POST,
-            path="/posts",
+            path = "/posts",
             //consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE // author=svsv&text=sgdgd
             consumes = MediaType.APPLICATION_JSON_VALUE // { "author": "svsv" , "text" : "sgdgd" }
     )
@@ -62,11 +68,10 @@ public class BlogPostController {
     // ... with @JsonField("first") to deserialize the incoming request)
     // ... see more: https://stackoverflow.com/questions/7312436/spring-mvc-how-to-get-all-request-params-in-a-map-in-spring-controller
     public ResponseEntity<String> addPost(
-                        //@RequestParam("author") String author,    // ... if APPLICATION_FORM_URLENCODED_VALUE
-                        //@RequestParam("post") String post)        // ... if APPLICATION_FORM_URLENCODED_VALUE
-                        //@RequestBody BlogPost post)               // ... if APPLICATION_JSON_VALUE
-                        @RequestBody Map<String, String> params)
-    {
+            //@RequestParam("author") String author,    // ... if APPLICATION_FORM_URLENCODED_VALUE
+            //@RequestParam("post") String post)        // ... if APPLICATION_FORM_URLENCODED_VALUE
+            //@RequestBody BlogPost post)               // ... if APPLICATION_JSON_VALUE
+            @RequestBody Map<String, String> params) {
         //bpr.save(new BlogPost(author, post));                     // ... if APPLICATION_FORM_URLENCODED_VALUE
         //bpr.save(post);                                           // ... if APPLICATION_JSON_VALUE
         bpr.save(new BlogPost(params.get("author"), params.get("post"))); // ... if APPLICATION_JSON_VALUE + param map
@@ -81,11 +86,11 @@ public class BlogPostController {
     //}
 
     //@RequestMapping(method = RequestMethod.DELETE, path="/posts/{id}")
-    @DeleteMapping(path="/posts/{id}")
+    @DeleteMapping(path = "/posts/{id}")
     public ResponseEntity<Void> deletePost(@PathVariable Integer id) {
         try {
             bpr.deleteById(id);
-        } catch (EmptyResultDataAccessException e){
+        } catch (EmptyResultDataAccessException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND); // 404
         }
         return new ResponseEntity<>(HttpStatus.NO_CONTENT); // 204
@@ -108,7 +113,7 @@ public class BlogPostController {
 
     @RequestMapping(
             method = RequestMethod.PUT,
-            path="/posts/{id}",
+            path = "/posts/{id}",
             consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE
     )
     public ResponseEntity<Void> updatePost(
